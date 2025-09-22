@@ -32,14 +32,11 @@ type GMapsNS = {
   event: GEvent;
   SymbolPath: { CIRCLE: string };
   Animation: { DROP: string; BOUNCE: string };
-};
 
 declare global {
   interface Window {
-    google?: { maps?: GMapsNS };
-  }
-};
-  }
+    google?: { maps?: GMapsNS }
+}
 }
 // ------------------------------------------------------------------
 // GOOGLE MAPS API KEY HANDLING
@@ -382,8 +379,7 @@ function useGoogleMaps(apiKey?: string, language?: string) {
     return () => {
       script?.removeEventListener("load", onLoad);
       script?.removeEventListener("error", onErr);
-    };
-  }, [apiKey, language]);
+    }, [apiKey, language]);
   return status;
 }
 
