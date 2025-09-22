@@ -13,11 +13,54 @@ import Image from "next/image";
 // ------------------------------------------------------------------
 // ------------------------------------------------------------------
 // Minimal types to avoid `any` while keeping Google Maps optional
-type GEvent = { trigger?: (instance: unknown, eventName: string) => void };
-type GMaps = { event?: GEvent };
+type LatLngLiteral = { lat: number; lng: number };
+
+type GMap = {
+  panTo(pos: LatLngLiteral): void;
+  setZoom(z: number): void;
+  fitBounds(bounds: GLatLngBounds): void;
+};
+
+type GInfoWindow = {
+  setContent(node: string | Node): void;
+  open(opts?: { map?: GMap; anchor?: GMarker }): void;
+  close(): void;
+};
+
+type GMarker = {
+  setMap: (map: GMap | null) => void;
+  addListener?: (event: string, handler: (...a: unknown[]) => void) => void;
+  getPosition?: () => LatLngLiteral;
+};
+
+type GLatLngBounds = {
+  extend: (ll: LatLngLiteral) => void;
+};
+
+type GSymbolPath = number | string;
+type GAnimation = number | string;
+
+type GEvent = {
+  trigger?: (instance: unknown, eventName: string) => void;
+  addListener?: (instance: unknown, eventName: string, handler: (...a: unknown[]) => void) => void;
+};
+
+type GMaps = {
+  Map?: new (el: HTMLElement, options?: Record<string, unknown>) => GMap;
+  InfoWindow?: new (opts?: Record<string, unknown>) => GInfoWindow;
+  Marker?: new (opts?: Record<string, unknown>) => GMarker;
+  LatLngBounds?: new () => GLatLngBounds;
+  SymbolPath?: { CIRCLE?: GSymbolPath } | unknown;
+  Animation?: { BOUNCE?: GAnimation } | unknown;
+  event?: GEvent;
+};
+
 type GoogleGlobal = { maps?: GMaps };
 
-type MarkerLike = { setMap: (map: unknown | null) => void };
+type MarkerLike = { 
+  setMap: (map: unknown | null) => void; 
+  getPosition?: () => LatLngLiteral;
+};
 
 declare global {
   interface Window {
@@ -392,36 +435,38 @@ function MapWithPlaces({ people, lang, onSelectPerson }: { people: Person[]; lan
   }, [placeQuery, places]);
 
   // Keep references to the map and markers
-  const mapRef = useRef<unknown>(null);
-  const infoRef = useRef<unknown>(null);
+  const mapRef = useRef<GMap | null>(null);
+  const infoRef = useRef<GInfoWindow | null>(null);
   const markersRef = useRef<Record<string, MarkerLike>>({});
 
   useEffect(() => {
     if (status !== "ready" || !mapDivRef.current) return;
     const google = (window as unknown as Window).google;
+function getGoogle() { return (window as unknown as Window).google; }
+
     if (!mapRef.current) {
-      mapRef.current = new google.maps.Map(mapDivRef.current, {
+      mapRef.current = /* guarded */ new (google?.maps?.Map as (new(el: HTMLElement, options?: Record<string, unknown>) => GMap))(mapDivRef.current, {
         center: { lat: 48, lng: 66 },
         zoom: 5,
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: true,
       });
-      infoRef.current = new google.maps.InfoWindow();
+      infoRef.current = new (google?.maps?.InfoWindow as (new(opts?: Record<string, unknown>) => GInfoWindow))();
     }
 
     // clear and rebuild markers for filtered list
     Object.values(markersRef.current).forEach((m: MarkerLike) => m.setMap(null));
     markersRef.current = {};
-    const bounds = new google.maps.LatLngBounds();
+    const bounds = new (google?.maps?.LatLngBounds as (new () => GLatLngBounds))();
 
     placesFiltered.forEach(p => {
-      const marker = new google.maps.Marker({
+      const marker = new (google?.maps?.Marker as (new(opts?: Record<string, unknown>) => GMarker))({
         position: { lat: p.lat as number, lng: p.lng as number },
         map: mapRef.current,
         title: p.name,
         icon: {
-          path: google.maps.SymbolPath.CIRCLE,
+          path: (google?.maps?.SymbolPath as { CIRCLE?: GSymbolPath } | undefined) ?? {}.CIRCLE,
           scale: 12,
           fillColor: assignMarkerColor(p.fields),
           fillOpacity: 0.9,
@@ -429,7 +474,7 @@ function MapWithPlaces({ people, lang, onSelectPerson }: { people: Person[]; lan
           strokeWeight: 3,
           strokeOpacity: 1,
         },
-        animation: google.maps.Animation.DROP,
+        animation: (google?.maps?.Animation as { BOUNCE?: GAnimation } | undefined) ?? {}.DROP,
       });
       markersRef.current[p.id] = marker;
       bounds.extend(marker.getPosition());
@@ -465,8 +510,8 @@ function MapWithPlaces({ people, lang, onSelectPerson }: { people: Person[]; lan
               </button>
             </div>
           </div>`;
-        infoRef.current.setContent(html);
-        infoRef.current.open({ anchor: marker, map: mapRef.current });
+        infoRef.current?.setContent(html);
+        infoRef.current?.open({ anchor: marker, map: mapRef.current });
         setTimeout(() => {
           const btn = document.getElementById(btnId);
           if (btn) btn.onclick = () => onSelectPerson(p);
@@ -474,7 +519,7 @@ function MapWithPlaces({ people, lang, onSelectPerson }: { people: Person[]; lan
       });
     });
 
-    if (placesFiltered.length > 1) mapRef.current.fitBounds(bounds);
+    if (placesFiltered.length > 1) mapRef.current?.fitBounds(bounds);
     else if (placesFiltered.length === 1) mapRef.current.setCenter(bounds.getCenter());
   }, [status, placesFiltered, lang, onSelectPerson]);
 
@@ -484,7 +529,7 @@ function MapWithPlaces({ people, lang, onSelectPerson }: { people: Person[]; lan
     const m = markersRef.current[focusId];
     if (m) {
       (window as unknown as Window).google.maps.event.trigger(m, "click");
-      mapRef.current?.panTo(m.getPosition());
+      mapRef.current?.panTo(m.getPosition?.());
       mapRef.current?.setZoom(7);
     }
   }, [focusId]);
