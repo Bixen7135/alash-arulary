@@ -29,7 +29,8 @@ type GMapsNS = {
   InfoWindow: new (opts?: Record<string, unknown>) => GInfoWindow;
   LatLngBounds: new () => unknown;
   event: GEvent;
-  SymbolPath: { CIRCLE: string };
+  SymbolPath: { CIRCLE: string   Animation: { DROP: string; BOUNCE: string; };
+};
 };
 declare global {
   interface Window {
