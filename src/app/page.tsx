@@ -23,6 +23,7 @@ type GInfoWindow = {
   open: (map: unknown, anchor?: unknown) => void;
 };
 type GEvent = { trigger: (target: unknown, eventName: string) => void };
+
 type GMapsNS = {
   Map: new (el: HTMLElement, opts: Record<string, unknown>) => GMap;
   Marker: new (opts: Record<string, unknown>) => GMarker;
@@ -33,11 +34,11 @@ type GMapsNS = {
   Animation: { DROP: string; BOUNCE: string };
 };
 
-};
-};
 declare global {
   interface Window {
     google?: { maps?: GMapsNS };
+  }
+};
   }
 }
 // ------------------------------------------------------------------
