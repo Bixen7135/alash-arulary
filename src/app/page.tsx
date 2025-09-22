@@ -35,8 +35,6 @@ declare global {
     google?: { maps?: GMapsNS };
   }
 }
-
-
 // ------------------------------------------------------------------
 // GOOGLE MAPS API KEY HANDLING
 // ------------------------------------------------------------------
@@ -408,7 +406,7 @@ function MapWithPlaces({ people, lang, onSelectPerson }: { people: Person[]; lan
 
   // Keep references to the map and markers
   const mapRef = useRef<GMap | null>(null);
-  const infoRef = useRef<GMap | null>(null);
+  const infoRef = useRef<GInfoWindow | null>(null);
   const markersRef = useRef<Record<string, GMarker>>({});
 
   useEffect(() => {
