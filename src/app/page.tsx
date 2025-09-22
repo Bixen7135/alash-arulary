@@ -32,10 +32,13 @@ type GMapsNS = {
   event: GEvent;
   SymbolPath: { CIRCLE: string };
   Animation: { DROP: string; BOUNCE: string };
+};
 
 declare global {
   interface Window {
-    google?: { maps?: GMapsNS }
+    google?: { maps?: GMapsNS };
+  }
+}
 }
 }
 // ------------------------------------------------------------------
