@@ -366,26 +366,31 @@ function useGoogleMaps(apiKey?: string, language?: string) {
     if (!apiKey) { setStatus("no-key"); return; }
     if ((window as Window).google?.maps) { setStatus("ready"); return; }
 
-    let script = document.querySelector<HTMLScriptElement>("script[data-gmaps]");
+    let script = document.querySelector<HTMLScriptElement>('script[data-gmaps]');
     const onLoad = () => setStatus("ready");
     const onErr  = () => setStatus("error");
 
     if (!script) {
       script = document.createElement("script");
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}${language ? `&language=${language}` : ""}`;
-      script.async = true; script.defer = true; script.setAttribute("data-gmaps", "1");
+      script.async = true;
+      script.defer = true;
+      script.setAttribute("data-gmaps", "1");
       script.addEventListener("load", onLoad, { once: true });
       script.addEventListener("error", onErr, { once: true });
       document.head.appendChild(script);
       setStatus("loading");
     } else {
-      if ((window as Window).google?.maps) setStatus("ready");
-      else { setStatus("loading"); script.addEventListener("load", onLoad, { once: true }); script.addEventListener("error", onErr, { once: true }); }
+      setStatus((window as Window).google?.maps ? "ready" : "loading");
+      script.addEventListener("load", onLoad, { once: true });
+      script.addEventListener("error", onErr, { once: true });
     }
+
     return () => {
       script?.removeEventListener("load", onLoad);
       script?.removeEventListener("error", onErr);
-    }, [apiKey, language]);
+    };
+  }, [apiKey, language]);
   return status;
 }
 
