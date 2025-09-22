@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import type { MapsLibrary } from '@google/maps';
+import { Loader } from '@googlemaps/js-api-loader';
 
 /**
  * Replace this with your real data. The important piece is that `position`
@@ -29,11 +31,47 @@ export default function Page() {
   // Keep markers and one InfoWindow instance around
   const markersRef = useRef<Record<string, google.maps.Marker>>({});
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
-
-  // ✅ The critical fix: keep a correctly-typed LatLngBounds
   const boundsRef = useRef<google.maps.LatLngBounds | null>(null);
 
+  const [mapsReady, setMapsReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // ✅ Load Google Maps JS API on the client only
   useEffect(() => {
+    let canceled = false;
+
+    (async () => {
+      try {
+        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+        if (!apiKey) {
+          throw new Error(
+            'Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY. Set it in .env.local and Vercel Project Settings → Environment Variables.'
+          );
+        }
+
+        const loader = new Loader({
+          apiKey,
+          version: 'weekly',
+          libraries: ['marker', 'places'],
+        });
+
+        // Load the API
+        await loader.load();
+
+        if (!canceled) setMapsReady(true);
+      } catch (e: any) {
+        if (!canceled) setError(e?.message ?? 'Failed to load Google Maps API');
+      }
+    })();
+
+    return () => {
+      canceled = true;
+    };
+  }, []);
+
+  // Initialize map when mapsReady
+  useEffect(() => {
+    if (!mapsReady) return;
     if (!mapDivRef.current) return;
 
     // Initialize the map once
@@ -51,11 +89,10 @@ export default function Page() {
       infoWindowRef.current = new google.maps.InfoWindow();
     }
 
-    // Ensure we have a bounds object (typed)
     boundsRef.current = new google.maps.LatLngBounds();
     const bounds = boundsRef.current;
 
-    // Clear existing markers if you re-render often
+    // Clear existing markers if any
     for (const id in markersRef.current) {
       markersRef.current[id].setMap(null);
     }
@@ -71,12 +108,8 @@ export default function Page() {
 
       markersRef.current[p.id] = marker;
 
-      // getPosition() can be null before the marker is fully initialized
       const pos = marker.getPosition();
-      if (pos) {
-        // ✅ No more "unknown": bounds is a LatLngBounds
-        bounds.extend(pos);
-      }
+      if (pos) bounds.extend(pos);
 
       marker.addListener('click', () => {
         const html = `
@@ -91,12 +124,10 @@ export default function Page() {
           map,
         });
 
-        // You can attach a DOM-ready handler if you need to wire up the button:
         google.maps.event.addListenerOnce(infoWindowRef.current!, 'domready', () => {
           const btn = document.getElementById(`ih-open-bio-${p.id}`);
           if (btn) {
             btn.addEventListener('click', () => {
-              // your handler here
               console.log('Open clicked for', p.id);
             });
           }
@@ -108,15 +139,23 @@ export default function Page() {
     if (!bounds.isEmpty()) {
       map.fitBounds(bounds);
     } else {
-      // fallback: center where you like
       map.setCenter({ lat: 43.238949, lng: 76.889709 });
       map.setZoom(11);
     }
-  }, [points]);
+  }, [mapsReady, points]);
 
   return (
     <main className="w-full h-dvh">
-      {/* Your page content above/below the map as needed */}
+      {!mapsReady && !error && (
+        <div className="w-full h-full grid place-items-center text-sm opacity-70">
+          Loading map…
+        </div>
+      )}
+      {error && (
+        <div className="w-full h-full grid place-items-center text-red-600">
+          {error}
+        </div>
+      )}
       <div
         ref={mapDivRef}
         style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden' }}
