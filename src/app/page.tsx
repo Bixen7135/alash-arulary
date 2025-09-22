@@ -413,30 +413,31 @@ function MapWithPlaces({ people, lang, onSelectPerson }: { people: Person[]; lan
 
   useEffect(() => {
     if (status !== "ready" || !mapDivRef.current) return;
-    const google = (window as Window).google;
+    const g = (window as Window).google;
+    if (!g?.maps) return;
     if (!mapRef.current) {
-      mapRef.current = new google.maps.Map(mapDivRef.current, {
+      mapRef.current = new g.maps.Map(mapDivRef.current, {
         center: { lat: 48, lng: 66 },
         zoom: 5,
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: true,
       });
-      infoRef.current = new google.maps.InfoWindow();
+      infoRef.current = new g.maps.InfoWindow();
     }
 
     // clear and rebuild markers for filtered list
     Object.values(markersRef.current).forEach((m) => m.setMap(null));
     markersRef.current = {};
-    const bounds = new google.maps.LatLngBounds();
+    const bounds = new g.maps.LatLngBounds();
 
     placesFiltered.forEach(p => {
-      const marker = new google.maps.Marker({
+      const marker = new g.maps.Marker({
         position: { lat: p.lat as number, lng: p.lng as number },
         map: mapRef.current,
         title: p.name,
         icon: {
-          path: google.maps.SymbolPath.CIRCLE,
+          path: g.maps.SymbolPath.CIRCLE,
           scale: 12,
           fillColor: assignMarkerColor(p.fields),
           fillOpacity: 0.9,
@@ -444,7 +445,7 @@ function MapWithPlaces({ people, lang, onSelectPerson }: { people: Person[]; lan
           strokeWeight: 3,
           strokeOpacity: 1,
         },
-        animation: google.maps.Animation.DROP,
+        animation: g.maps.Animation.DROP,
       });
       markersRef.current[p.id] = marker;
       bounds.extend(marker.getPosition());
@@ -498,7 +499,7 @@ function MapWithPlaces({ people, lang, onSelectPerson }: { people: Person[]; lan
     if (!focusId || !markersRef.current || !(window as Window).google?.maps) return;
     const m = markersRef.current[focusId];
     if (m) {
-      (window as Window).google.maps.event.trigger(m, "click");
+      (window as Window).g.maps.event.trigger(m, "click");
       mapRef.current?.panTo(m.getPosition());
       mapRef.current?.setZoom(7);
     }
