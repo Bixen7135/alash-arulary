@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import Image from "next/image";
 // ---- Minimal Google Maps typings to avoid `any` without adding @types/google.maps
 type GMap = {
   panTo: (pos: unknown) => void;
