@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import type { MapsLibrary } from '@google/maps';
 import { Loader } from '@googlemaps/js-api-loader';
 
 /**
@@ -59,8 +58,10 @@ export default function Page() {
         await loader.load();
 
         if (!canceled) setMapsReady(true);
-      } catch (e: any) {
-        if (!canceled) setError(e?.message ?? 'Failed to load Google Maps API');
+      } catch (e: unknown) {
+        const message =
+          e instanceof Error ? e.message : typeof e === 'string' ? e : 'Failed to load Google Maps API';
+        if (!canceled) setError(message);
       }
     })();
 
