@@ -413,29 +413,30 @@ function MapWithPlaces({ people, lang, onSelectPerson }: { people: Person[]; lan
     if (status !== "ready" || !mapDivRef.current) return;
     const g = (window as Window).google;
     if (!g?.maps) return;
-    if (!mapRef.current) {
-      mapRef.current = new g.maps.Map(mapDivRef.current, {
+    const gm = g.maps!;
+if (!mapRef.current) {
+      mapRef.current = new gm.Map(mapDivRef.current, {
         center: { lat: 48, lng: 66 },
         zoom: 5,
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: true,
       });
-      infoRef.current = new g.maps.InfoWindow();
+      infoRef.current = new gm.InfoWindow();
     }
 
     // clear and rebuild markers for filtered list
     Object.values(markersRef.current).forEach((m) => m.setMap(null));
     markersRef.current = {};
-    const bounds = new g.maps.LatLngBounds();
+    const bounds = new gm.LatLngBounds();
 
     placesFiltered.forEach(p => {
-      const marker = new g.maps.Marker({
+      const marker = new gm.Marker({
         position: { lat: p.lat as number, lng: p.lng as number },
         map: mapRef.current,
         title: p.name,
         icon: {
-          path: g.maps.SymbolPath.CIRCLE,
+          path: gm.SymbolPath.CIRCLE,
           scale: 12,
           fillColor: assignMarkerColor(p.fields),
           fillOpacity: 0.9,
@@ -443,7 +444,7 @@ function MapWithPlaces({ people, lang, onSelectPerson }: { people: Person[]; lan
           strokeWeight: 3,
           strokeOpacity: 1,
         },
-        animation: g.maps.Animation.DROP,
+        animation: gm.Animation.DROP,
       });
       markersRef.current[p.id] = marker;
       bounds.extend(marker.getPosition());
@@ -497,7 +498,7 @@ function MapWithPlaces({ people, lang, onSelectPerson }: { people: Person[]; lan
     if (!focusId || !markersRef.current || !(window as Window).google?.maps) return;
     const m = markersRef.current[focusId];
     if (m) {
-      (window as Window).g.maps.event.trigger(m, "click");
+      (window as Window).gm.event.trigger(m, "click");
       mapRef.current?.panTo(m.getPosition());
       mapRef.current?.setZoom(7);
     }
