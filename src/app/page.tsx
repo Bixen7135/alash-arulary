@@ -42,10 +42,7 @@ type GMapsNS = {
 declare global {
   interface Window {
     google?: { maps?: GMapsNS };
-  };
   }
-}
-}
 }
 // ------------------------------------------------------------------
 // GOOGLE MAPS API KEY HANDLING
