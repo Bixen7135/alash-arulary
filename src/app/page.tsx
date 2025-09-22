@@ -29,14 +29,20 @@ type GMapsNS = {
   Marker: new (opts: Record<string, unknown>) => GMarker;
   InfoWindow: new (opts?: Record<string, unknown>) => GInfoWindow;
   LatLngBounds: new () => unknown;
+  LatLng: new (lat: number, lng: number) => unknown;
+  Point: new (x: number, y: number) => unknown;
+  Size: new (w: number, h: number) => unknown;
   event: GEvent;
   SymbolPath: { CIRCLE: string };
   Animation: { DROP: string; BOUNCE: string };
+  MapTypeId: { ROADMAP: string; SATELLITE: string; HYBRID: string; TERRAIN: string };
+  ControlPosition: { TOP_LEFT: number; TOP_RIGHT: number; BOTTOM_LEFT: number; BOTTOM_RIGHT: number };
 };
 
 declare global {
   interface Window {
     google?: { maps?: GMapsNS };
+  };
   }
 }
 }
