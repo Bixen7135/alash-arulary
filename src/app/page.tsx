@@ -6,35 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-// ---- Minimal Google Maps typings to avoid `any` without adding @types/google.maps
-type GMap = {
-  panTo: (pos: unknown) => void;
-  setZoom: (z: number) => void;
-  fitBounds: (bounds: unknown) => void;
-};
-type GMarker = {
-  setMap: (map: unknown | null) => void;
-  addListener: (type: string, listener: (...args: unknown[]) => void) => void;
-  getPosition: () => unknown;
-};
-type GInfoWindow = {
-  setContent: (content: string | HTMLElement) => void;
-  open: (map: unknown, anchor?: unknown) => void;
-};
-type GEvent = { trigger: (target: unknown, eventName: string) => void };
-type GMapsNS = {
-  Map: new (el: HTMLElement, opts: Record<string, unknown>) => GMap;
-  Marker: new (opts: Record<string, unknown>) => GMarker;
-  InfoWindow: new (opts?: Record<string, unknown>) => GInfoWindow;
-  LatLngBounds: new () => unknown;
-  event: GEvent;
-};
-declare global {
-  interface Window {
-    google?: { maps?: GMapsNS };
-  }
-}
-
 
 // ------------------------------------------------------------------
 // GOOGLE MAPS API KEY HANDLING
@@ -356,7 +327,7 @@ function useGoogleMaps(apiKey?: string, language?: string) {
   useEffect(() => {
     if (typeof window === "undefined") return; // SSR safety
     if (!apiKey) { setStatus("no-key"); return; }
-    if ((window as Window).google?.maps) { setStatus("ready"); return; }
+    if ((window as any).google?.maps) { setStatus("ready"); return; }
 
     let script = document.querySelector<HTMLScriptElement>("script[data-gmaps]");
     const onLoad = () => setStatus("ready");
@@ -371,7 +342,7 @@ function useGoogleMaps(apiKey?: string, language?: string) {
       document.head.appendChild(script);
       setStatus("loading");
     } else {
-      if ((window as Window).google?.maps) setStatus("ready");
+      if ((window as any).google?.maps) setStatus("ready");
       else { setStatus("loading"); script.addEventListener("load", onLoad, { once: true }); script.addEventListener("error", onErr, { once: true }); }
     }
     return () => {
@@ -406,13 +377,13 @@ function MapWithPlaces({ people, lang, onSelectPerson }: { people: Person[]; lan
   }, [placeQuery, places]);
 
   // Keep references to the map and markers
-  const mapRef = useRef<GMap | null>(null);
-  const infoRef = useRef<GMap | null>(null);
-  const markersRef = useRef<Record<string, GMarker>>({});
+  const mapRef = useRef<any>(null);
+  const infoRef = useRef<any>(null);
+  const markersRef = useRef<Record<string, any>>({});
 
   useEffect(() => {
     if (status !== "ready" || !mapDivRef.current) return;
-    const google = (window as Window).google;
+    const google = (window as any).google;
     if (!mapRef.current) {
       mapRef.current = new google.maps.Map(mapDivRef.current, {
         center: { lat: 48, lng: 66 },
@@ -425,7 +396,7 @@ function MapWithPlaces({ people, lang, onSelectPerson }: { people: Person[]; lan
     }
 
     // clear and rebuild markers for filtered list
-    Object.values(markersRef.current).forEach((m) => m.setMap(null));
+    Object.values(markersRef.current).forEach((m: any) => m.setMap(null));
     markersRef.current = {};
     const bounds = new google.maps.LatLngBounds();
 
@@ -494,10 +465,10 @@ function MapWithPlaces({ people, lang, onSelectPerson }: { people: Person[]; lan
 
   // Focus a specific marker from the list
   useEffect(() => {
-    if (!focusId || !markersRef.current || !(window as Window).google?.maps) return;
+    if (!focusId || !markersRef.current || !(window as any).google?.maps) return;
     const m = markersRef.current[focusId];
     if (m) {
-      (window as Window).google.maps.event.trigger(m, "click");
+      (window as any).google.maps.event.trigger(m, "click");
       mapRef.current?.panTo(m.getPosition());
       mapRef.current?.setZoom(7);
     }
@@ -602,7 +573,7 @@ export default function AlashArularyApp() {
     } catch (e) {
       console.warn("DEV TESTS WARN:", e);
     }
-  }, [route]);
+  }, []);
 
   // Sidebar helper
   const NavBtn = ({ id, label, icon }: { id: Route; label: string; icon: React.ReactNode }) => {
@@ -732,7 +703,7 @@ export default function AlashArularyApp() {
                     <motion.div key={p.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
                       <Card className="group rounded-2xl border-purple-200 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 h-[500px] flex flex-col" onClick={() => setActivePerson(p)} role="button">
                         <CardHeader className="flex-shrink-0 p-0">
-                          <Image src={p.photo} alt={displayName} width={800} height={256} className="rounded-2xl w-full h-64 object-cover" unoptimized />
+                          <img src={p.photo} alt={displayName} className="rounded-2xl w-full h-64 object-cover" />
                           <div className="p-4">
                             <CardTitle className="text-lg text-slate-800 line-clamp-2">{displayName}</CardTitle>
                           </div>
@@ -803,7 +774,11 @@ export default function AlashArularyApp() {
                     </DialogHeader>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 overflow-y-auto max-h-[60vh]">
                       <div className="relative">
-                        <Image src={activePerson.photo} alt={activePerson.name} width={800} height={600} className="rounded-2xl w-full h-auto object-cover shadow-lg border-4 border-white/50" unoptimized />
+                        <img 
+                          src={activePerson.photo} 
+                          alt={activePerson.name} 
+                          className="rounded-2xl w-full h-auto object-cover shadow-lg border-4 border-white/50" 
+                        />
                         <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-amber-500 flex items-center justify-center shadow-lg">
                           <span className="text-white text-sm">👤</span>
                         </div>
